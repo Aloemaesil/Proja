@@ -1,0 +1,75 @@
+name: Deploy to NHN Cloud NCR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile/**
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to NCR
+      run: |
+        echo ${{ secrets.NCR_PASSWORD }} | docker login ${{ secrets.NCR_REGISTRY }} -u ${{ secrets.NCR_USERNAME }} --password-stdin
+
+    - name: Get list of changed directories
+      id: changed-dirs
+      run: |
+        echo "::set-output name=dirs::$(git diff --name-only HEAD^ HEAD | grep 'Dockerfile/' | cut -d '/' -f2 | sort -u)"
+
+    - name: Build and push Docker images
+      run: |
+        IFS=', ' read -r -a dirs <<< "${{ steps.changed-dirs.outputs.dirs }}"
+        for dir in "${dirs[@]}"; do
+          if [[ $dir == web-* ]]; then
+            image_name="project-art/pa-nginx-${dir#web-}"
+            manifest_name="pa-nginx-${dir#web-}.yaml"
+          elif [[ $dir == was-* ]]; then
+            image_name="project-art/pa-tomcat-${dir#was-}"
+            manifest_name="pa-tomcat-${dir#was-}.yaml"
+          else
+            echo "Unknown directory: $dir"
+            exit 1
+          fi
+
+          echo "Processing $dir -> $image_name"
+
+          latest_tag=$(docker images "${{ secrets.NCR_REGISTRY }}/$image_name" --format "{{.Tag}}" | sort -rV | head -n 1)
+          if [ -z "$latest_tag" ]; then
+            new_tag="0.1"
+          else
+            new_tag=$(echo "$latest_tag + 0.1" | bc)
+          fi
+
+          image_full="${{ secrets.NCR_REGISTRY }}/$image_name:$new_tag"
+
+          echo "Building $image_full"
+          docker build -f Dockerfile/$dir/Dockerfile -t $image_full Dockerfile/$dir
+          docker push $image_full
+
+          # Update the Kubernetes manifests
+          echo "Updating Kubernetes manifest for $dir"
+          sed -i "s|image: ${image_name}:.*|image: ${image_full}|" k8s/$manifest_name
+
+          echo "Commit and push Kubernetes manifest changes"
+          git add k8s/$manifest_name
+        done
+      shell: bash
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git commit -m "Update Kubernetes manifests with new image tags"
+        git push
+      if: success()
