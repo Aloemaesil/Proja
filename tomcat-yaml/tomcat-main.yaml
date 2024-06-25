@@ -75,9 +75,9 @@ metadata:
   name: pa-tomcat-main-svc
   namespace: default
 spec:
-  clusterIP: 10.100.72.11
+  clusterIP: 10.254.72.11
   clusterIPs:
-  - 10.100.72.11
+  - 10.254.72.11
   internalTrafficPolicy: Cluster
   ipFamilies:
   - IPv4

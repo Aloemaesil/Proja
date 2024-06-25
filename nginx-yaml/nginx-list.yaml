@@ -78,9 +78,9 @@ metadata:
 spec:
   selector:
     app: pa-nginx-list
-  clusterIP: 10.100.72.3
+  clusterIP: 10.254.72.3
   clusterIPs:
-  - 10.100.72.3
+  - 10.254.72.3
   internalTrafficPolicy: Cluster
   ipFamilies:
   - IPv4

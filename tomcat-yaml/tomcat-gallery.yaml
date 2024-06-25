@@ -75,9 +75,9 @@ metadata:
   name: pa-tomcat-gallery-svc
   namespace: default
 spec:
-  clusterIP: 10.100.72.14
+  clusterIP: 10.254.72.14
   clusterIPs:
-  - 10.100.72.14
+  - 10.254.72.14
   internalTrafficPolicy: Cluster
   ipFamilies:
   - IPv4
