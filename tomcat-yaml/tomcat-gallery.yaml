@@ -73,7 +73,7 @@ metadata:
   labels:
     app: pa-tomcat-gallery
   name: pa-tomcat-gallery-svc
-  namespace: default
+  namespace: was
 spec:
   clusterIP: 10.254.72.14
   clusterIPs:

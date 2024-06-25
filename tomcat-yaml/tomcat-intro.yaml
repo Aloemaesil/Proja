@@ -73,7 +73,7 @@ metadata:
   labels:
     app: pa-tomcat-intro
   name: pa-tomcat-intro-svc
-  namespace: default
+  namespace: was
 spec:
   clusterIP: 10.254.72.12
   clusterIPs:

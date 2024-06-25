@@ -73,7 +73,7 @@ metadata:
   labels:
     app: pa-tomcat-main
   name: pa-tomcat-main-svc
-  namespace: default
+  namespace: was
 spec:
   clusterIP: 10.254.72.11
   clusterIPs:
