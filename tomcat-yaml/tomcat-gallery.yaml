@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pa-tomcat-gallery
+  name: pa-tomcat-gallery
+  namespace: was
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: pa-tomcat-gallery
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: pa-tomcat-gallery
+    spec:
+      containers:
+      - image: 69af7867-kr1-registry.container.nhncloud.com/project-art/pa-tomcat-gallery:v1.0
+        name: pa-tomcat-gallery
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 15
+          initialDelaySeconds: 15
+          periodSeconds: 10   
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          timeoutSeconds: 15
+          initialDelaySeconds: 15
+          periodSeconds: 10    
+        resources:
+          requests:
+            memory: 250Mi
+            cpu: 250m
+          limits:
+            memory: 250Mi
+            cpu: 250m
+      imagePullSecrets:
+      - name: registry-credential
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: pa-tomcat-gallery
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: pa-tomcat-gallery
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pa-tomcat-gallery
+  name: pa-tomcat-gallery-svc
+  namespace: default
+spec:
+  clusterIP: 10.100.72.14
+  clusterIPs:
+  - 10.100.72.14
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: pa-tomcat-gallery
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-pa-tomcat-gallery
+spec:
+  maxReplicas: 10
+  minReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pa-tomcat-gallery
+  targetCPUUtilizationPercentage: 50

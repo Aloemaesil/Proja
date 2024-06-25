@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pa-nginx-intro
+  name: pa-nginx-intro
+  namespace: web
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: pa-nginx-intro
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: pa-nginx-intro
+    spec:
+      containers:
+      - image: 69af7867-kr1-registry.container.nhncloud.com/project-art/pa-nginx-intro:v1.0
+        name: pa-nginx-intro
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          timeoutSeconds: 15
+          initialDelaySeconds: 15
+          periodSeconds: 10   
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          timeoutSeconds: 15
+          initialDelaySeconds: 15
+          periodSeconds: 10     
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 50m
+          limits:
+            memory: 50Mi
+            cpu: 50m
+      imagePullSecrets:
+      - name: registry-credential
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: pa-nginx-intro
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: pa-nginx-intro
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pa-nginx-intro
+    app.kubernetes.io/instance: web-yaml
+  name: pa-nginx-intro-svc
+  namespace: default
+spec:
+  selector:
+    app: pa-nginx-intro
+  clusterIP: 10.100.72.2
+  clusterIPs:
+  - 10.100.72.2
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  type: NodePort
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-pa-nginx-intro
+spec:
+  maxReplicas: 10
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pa-nginx-intro
+  targetCPUUtilizationPercentage: 50

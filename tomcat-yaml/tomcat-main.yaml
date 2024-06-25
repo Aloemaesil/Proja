@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pa-tomcat-main
+  name: pa-tomcat-main
+  namespace: was
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: pa-tomcat-main
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: pa-tomcat-main
+    spec:
+      containers:
+      - image: 69af7867-kr1-registry.container.nhncloud.com/project-art/pa-tomcat-main:v1.0
+        name: pa-tomcat-main
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 15
+          initialDelaySeconds: 15
+          periodSeconds: 10   
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          timeoutSeconds: 15
+          initialDelaySeconds: 15
+          periodSeconds: 10    
+        resources:
+          requests:
+            memory: 250Mi
+            cpu: 250m
+          limits:
+            memory: 250Mi
+            cpu: 250m
+      imagePullSecrets:
+      - name: registry-credential
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: pa-tomcat-main
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: pa-tomcat-main
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pa-tomcat-main
+  name: pa-tomcat-main-svc
+  namespace: default
+spec:
+  clusterIP: 10.100.72.11
+  clusterIPs:
+  - 10.100.72.11
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: pa-tomcat-main
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-pa-tomcat-main
+spec:
+  maxReplicas: 10
+  minReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pa-tomcat-main
+  targetCPUUtilizationPercentage: 50

@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pa-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: www.aloemaesil.shop
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pa-nginx-main-svc
+            port:
+              number: 80
+      - path: /intro
+        pathType: Prefix
+        backend:
+          service:
+            name: pa-nginx-intro-svc
+            port:
+              number: 80
+      - path: /list
+        pathType: Prefix
+        backend:
+          service:
+            name: pa-nginx-list-svc
+            port:
+              number: 80
+      - path: /gallery
+        pathType: Prefix
+        backend:
+          service:
+            name: pa-nginx-gallery-svc
+            port:
+              number: 80
+status: {}
