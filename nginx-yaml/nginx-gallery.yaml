@@ -23,6 +23,8 @@ spec:
       labels:
         app: pa-nginx-gallery
     spec:
+      imagePullSecrets:
+      - name: registry-credential
       containers:
       - image: 69af7867-kr1-registry.container.nhncloud.com/project-art/pa-nginx-gallery:v1.0
         name: pa-nginx-gallery
@@ -48,8 +50,6 @@ spec:
           limits:
             memory: 50Mi
             cpu: 50m
-      imagePullSecrets:
-      - name: registry-credential
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

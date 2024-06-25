@@ -23,6 +23,8 @@ spec:
       labels:
         app: pa-tomcat-gallery
     spec:
+      imagePullSecrets:
+      - name: registry-credential
       containers:
       - image: 69af7867-kr1-registry.container.nhncloud.com/project-art/pa-tomcat-gallery:v1.0
         name: pa-tomcat-gallery
@@ -48,8 +50,6 @@ spec:
           limits:
             memory: 250Mi
             cpu: 250m
-      imagePullSecrets:
-      - name: registry-credential
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
