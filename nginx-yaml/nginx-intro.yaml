@@ -26,7 +26,7 @@ spec:
       imagePullSecrets:
       - name: registry-credential
       containers:
-      - image: 69af7867-kr1-registry.container.nhncloud.com/project-art/pa-nginx-intro:v1.1
+      - image: 69af7867-kr1-registry.container.nhncloud.com/project-art/pa-nginx-intro:v1.2
         name: pa-nginx-intro
         ports:
         - containerPort: 80
